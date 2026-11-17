@@ -1,0 +1,14 @@
+{
+  "name": "dashboard-holiday-popups-dev",
+  "private": true,
+  "description": "Development tooling only (lint and script tests). Not shipped.",
+  "scripts": {
+    "lint": "eslint custom_components/dashboard_holiday_popups/frontend custom_components/dashboard_holiday_popups/panel.js",
+    "test": "node --test --test-force-exit tests/js/*.test.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

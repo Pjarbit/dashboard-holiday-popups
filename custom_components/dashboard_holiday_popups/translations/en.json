@@ -1,0 +1,65 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dashboard Holiday Popups",
+        "description": "Adds animated characters, popups and decorations over your dashboards. Everything is set up from the Holiday Popups panel in the sidebar."
+      }
+    },
+    "abort": {
+      "already_configured": "Dashboard Holiday Popups is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dashboard Holiday Popups",
+        "data": {
+          "enabled": "Master switch",
+          "default_dashboards": "Default dashboards (one URL path per line, e.g. /dashboard-2column; empty = all dashboards)"
+        }
+      }
+    },
+    "abort": {
+      "not_loaded": "Dashboard Holiday Popups is not loaded."
+    }
+  },
+  "services": {
+    "show_popup": {
+      "name": "Show popup",
+      "description": "Shows a popup, character or decoration right now.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "Name or id of the item."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Text for the banner. Leave empty to use the item's own text."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Seconds to stay on screen. Leave empty to use the item's own setting."
+        }
+      }
+    },
+    "hide_all": {
+      "name": "Hide all",
+      "description": "Dismisses every popup now and hides all characters for a minute."
+    },
+    "set_enabled": {
+      "name": "Set enabled",
+      "description": "Pauses or resumes one item.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "Name or id of the item."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "On to show the item, off to pause it."
+        }
+      }
+    }
+  }
+}

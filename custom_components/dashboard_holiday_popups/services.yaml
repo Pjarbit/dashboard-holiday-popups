@@ -1,0 +1,33 @@
+show_popup:
+  fields:
+    item:
+      required: true
+      example: "Mail"
+      selector:
+        text:
+    message:
+      required: false
+      example: "You've got mail"
+      selector:
+        text:
+    duration:
+      required: false
+      example: 8
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: s
+hide_all:
+set_enabled:
+  fields:
+    item:
+      required: true
+      example: "Flying witch"
+      selector:
+        text:
+    enabled:
+      required: true
+      default: true
+      selector:
+        boolean:
