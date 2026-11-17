@@ -1,5 +1,9 @@
 # Dashboard Holiday Popups
 
+[![Dashboard Holiday Popups demo](media/demo.gif)](media/dashboard_holiday_popup.mp4)
+
+*Click the animation to watch the full video.*
+
 Animated characters, timed popups and decorations that float over your Home Assistant dashboards, set up from one settings panel. Great for holidays and birthdays, but just as useful for **mail and package deliveries, washer and dryer done, weather, or anything else** an entity can tell you.
 
 - **Characters** walk along the bottom or top, drift, bob, sway, circle, or fly a curved or zigzag path. Push one off the screen with a finger and it either comes back after a delay you choose, or turns itself off. You can pause it for a selected amount of time or just turn it off completely.
@@ -321,3 +325,15 @@ Then upload the file as described in "Adding your own pictures". If the first tr
 - If your device is set to reduce motion, characters and popups stay hidden (decorations still show) unless you press Run now. You can turn this off in Settings.
 - Uploaded images are stored in `/config/dashboard_holiday_popups/`. Each changed image gets a new name, and each release is served from a new URL, so updates show up without any cache steps.
 - The settings panel is plain JavaScript, with no external libraries.
+
+## 💬 A Note from the Developer
+
+This integration is free and will always be free. If you find it useful, skip the coffee and give $5 to someone who needs it.
+
+Maintained by [@Pjarbit](https://github.com/Pjarbit). Issues: [GitHub Issues](https://github.com/Pjarbit/dashboard-holiday-popups/issues).
+
+## 📄 License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+Security and requirements: see [SECURITY.md](SECURITY.md).
