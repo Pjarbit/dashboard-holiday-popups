@@ -307,3 +307,39 @@ test('"Left or right" and "Top or bottom" popups only come in from those two edg
   assert.ok((await turns('left_right')).every((t) => t === 'rotate(90deg)' || t === 'rotate(-90deg)'));
   assert.ok((await turns('top_bottom')).every((t) => t === '' || t === 'rotate(180deg)'));
 });
+
+test('your own uploaded pictures load with the Home Assistant login; bundled art loads with a plain fetch', async () => {
+  const w = makeWindow();
+  const plain = [];
+  const authed = [];
+  w.fetch = async (u) => { plain.push(u); return { ok: true, blob: async () => ({ type: 'image/webp' }) }; };
+  const { ha, subs } = fakeHass(w);
+  ha.hass.fetchWithAuth = async (u, init) => { authed.push({ u, init }); return { ok: true, blob: async () => ({ type: 'image/gif' }) }; };
+  loadRuntime(w);
+  await tick(700);
+  subs[0].cb(config([
+    item({ id: 'u', image_url: '/dashboard_holiday_popups_files/kid-1a2b3c4d.gif' }),
+    item({ id: 'b', image_url: '/dashboard_holiday_popups_static/1.0.5/images/lion.webp' }),
+  ]));
+  await tick(80);
+  assert.deepStrictEqual(authed.map((c) => c.u), ['/dashboard_holiday_popups_files/kid-1a2b3c4d.gif']);
+  assert.strictEqual(authed[0].init.cache, 'reload');
+  assert.deepStrictEqual(plain, ['/dashboard_holiday_popups_static/1.0.5/images/lion.webp']);
+});
+
+test('an uploaded picture waits for the Home Assistant login instead of fetching without it', async () => {
+  const w = makeWindow();
+  const plain = [];
+  w.fetch = async (u) => { plain.push(u); return { ok: true, blob: async () => ({ type: 'image/webp' }) }; };
+  const { ha, subs } = fakeHass(w);
+  const authed = [];
+  loadRuntime(w);
+  await tick(700);
+  subs[0].cb(config([item({ image_url: '/dashboard_holiday_popups_files/kid-1a2b3c4d.gif' })]));
+  await tick(80);
+  assert.deepStrictEqual(plain, [], 'no unauthenticated request was made');
+  ha.hass.fetchWithAuth = async (u) => { authed.push(u); return { ok: true, blob: async () => ({ type: 'image/gif' }) }; };
+  await tick(1200);
+  assert.deepStrictEqual(authed, ['/dashboard_holiday_popups_files/kid-1a2b3c4d.gif']);
+  assert.deepStrictEqual(plain, []);
+});

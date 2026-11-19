@@ -184,6 +184,56 @@ async def test_upload_requires_auth(hass, setup_integration, hass_client_no_auth
     assert (await client.post(UPLOAD_URL, data=_form(GIF, "a.gif"))).status == 401
 
 
+async def test_uploaded_pictures_need_a_signed_in_user(hass, setup_integration, hass_client, hass_client_no_auth):
+    client = await hass_client()
+    up = await (await client.post(UPLOAD_URL, data=_form(GIF, "Kid party.gif"))).json()
+    url = up["url"]
+    assert url.startswith("/dashboard_holiday_popups_files/")
+
+    anonymous = await hass_client_no_auth()
+    assert (await anonymous.get(url)).status == 401
+
+    resp = await client.get(url)
+    assert resp.status == 200
+    assert (await resp.read()).startswith(b"GIF8")
+    assert resp.headers["Content-Type"] == "image/gif"
+    assert resp.headers["Cache-Control"] == "private, max-age=31536000, immutable"
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+
+
+async def test_uploaded_picture_view_only_serves_plain_picture_names(hass, setup_integration, hass_client):
+    client = await hass_client()
+    folder = files_dir(hass)
+    secret = os.path.join(os.path.dirname(folder), "secret.png")
+    with open(secret, "wb") as fh:
+        fh.write(PNG)
+    with open(os.path.join(folder, "notes.txt"), "w") as fh:
+        fh.write("not a picture")
+    os.symlink(secret, os.path.join(folder, "link-1.png"))
+    base = "/dashboard_holiday_popups_files/"
+    for bad in (
+        "../secret.png", "..%2Fsecret.png", "%2e%2e%2fsecret.png", "%2e%2e/secret.png",
+        "notes.txt", "link-1.png", "missing-1.png", ".hidden.png", "UPPER-1.png", "a%5Cb.png",
+    ):
+        resp = await client.get(base + bad)
+        assert resp.status in (400, 404), bad
+    assert (await client.get(base)).status in (404, 405)
+    # the old, unauthenticated static location is gone
+    assert (await client.get("/dashboard_holiday_popups_files/notes.txt")).status == 404
+
+
+async def test_resolve_upload_rules(tmp_path):
+    from custom_components.dashboard_holiday_popups import _resolve_upload
+
+    good = tmp_path / "witch-1a2b3c4d.webp"
+    good.write_bytes(b"RIFFxxxxWEBP")
+    assert _resolve_upload(str(tmp_path), "witch-1a2b3c4d.webp") == str(good)
+    for bad in ("../x.png", "a/b.png", "a\\b.png", "x.exe", "x", "..", ".a.png", "A.png", "a..b.png", "", "x" * 200 + ".png"):
+        assert _resolve_upload(str(tmp_path), bad) is None, bad
+    (tmp_path / "sub").mkdir()
+    assert _resolve_upload(str(tmp_path), "sub") is None  # a folder, not a file
+
+
 async def test_cleanup_removes_only_unreferenced_old_files(hass, setup_integration, hass_ws_client):
     folder = files_dir(hass)
     used, unused, fresh = (os.path.join(folder, n) for n in ("used-1.gif", "unused-2.gif", "fresh-3.gif"))

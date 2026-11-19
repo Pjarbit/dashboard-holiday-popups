@@ -1,14 +1,16 @@
-/* Dashboard Holiday Popups runtime  pja v1.0.4
+/* Dashboard Holiday Popups runtime  pja v1.0.6
    Loaded on every Home Assistant page by the integration. Decides per page whether to draw
    anything, then animates floaters, popups and decorations over the dashboard. */
 (() => {
   'use strict';
-  const VERSION = '1.0.4'; // pja v1.0.4
+  const VERSION = '1.0.6'; // pja v1.0.6
   if (window.__dhpRuntime) return;
   window.__dhpRuntime = VERSION;
 
   const DOMAIN = 'dashboard_holiday_popups';
   const RETRY_IMAGE_MS = 10000;
+  const WAIT_HASS_MS = 500;      // the page is not ready yet: look again soon
+  const UPLOADS_PREFIX = `/${DOMAIN}_files/`; // your own pictures: served to signed-in users only
   const EDGE_MARGIN = 80;       // release within this many px of an edge = pushed off
   const FLOOR_GAP = 4;
   const POPUP_SLIDE_MS = 450;
@@ -250,7 +252,15 @@
     const attempt = async () => {
       if (stopped || images.get(url) !== rec) return;
       try {
-        const r = await fetch(url, { cache: 'reload' });
+        let r;
+        if (url.startsWith(UPLOADS_PREFIX)) {
+          // Your own pictures need a signed-in session: wait for Home Assistant's page, then fetch with its login.
+          const hass = getHass();
+          if (!hass || typeof hass.fetchWithAuth !== 'function') { rec.timer = setTimeout(attempt, WAIT_HASS_MS); return; }
+          r = await hass.fetchWithAuth(url, { cache: 'reload' });
+        } else {
+          r = await fetch(url, { cache: 'reload' });
+        }
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const b = await r.blob();
         if (!b.type.startsWith('image')) throw new Error('not an image');

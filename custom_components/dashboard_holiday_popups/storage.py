@@ -1,5 +1,5 @@
 """Persistent store for items and settings, plus validation."""
-# Integration version: 1.0.4
+# Integration version: 1.0.6
 from __future__ import annotations
 
 from collections.abc import Callable

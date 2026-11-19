@@ -1,5 +1,5 @@
 """Dashboard Holiday Popups: animated characters, popups and decorations over dashboards."""
-# Integration version: 1.0.4
+# Integration version: 1.0.6
 from __future__ import annotations
 
 import hashlib
@@ -74,10 +74,10 @@ async def _async_register_static(hass: HomeAssistant) -> None:
             StaticPathConfig(RUNTIME_JS_URL, os.path.join(_MODULE_DIR, "frontend", "dashboard-holiday-popups.js"), False),
             StaticPathConfig(PANEL_JS_URL, os.path.join(_MODULE_DIR, "panel.js"), False),
             StaticPathConfig(BUILTIN_URL, os.path.join(_MODULE_DIR, "defaults"), False),
-            StaticPathConfig(FILES_URL, folder, False),
         ]
     )
     hass.http.register_view(UploadView())
+    hass.http.register_view(UploadedFileView())
     hass.data[_ONCE_STATIC] = True
 
 
@@ -461,6 +461,45 @@ def _cleanup_sync(folder: str, keep: set[str]) -> int:
 
 async def _async_cleanup_files(hass: HomeAssistant, store: PopupStore) -> None:
     await hass.async_add_executor_job(_cleanup_sync, files_dir(hass), store.referenced_files())
+
+
+_UPLOAD_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+_UPLOAD_MIME = {".gif": "image/gif", ".png": "image/png", ".apng": "image/png", ".webp": "image/webp"}
+
+
+def _resolve_upload(folder: str, name: str) -> str | None:
+    """Path of one uploaded picture, or None. Only a plain file name inside the uploads folder is accepted."""
+    if not _UPLOAD_NAME.match(name) or ".." in name:
+        return None
+    if os.path.splitext(name)[1].lower() not in _UPLOAD_MIME:
+        return None
+    root = os.path.realpath(folder)
+    path = os.path.join(root, name)
+    if os.path.islink(path) or os.path.realpath(path) != path or not os.path.isfile(path):
+        return None
+    return path
+
+
+class UploadedFileView(HomeAssistantView):
+    """Uploaded pictures, for signed-in users only (static paths skip authentication)."""
+
+    url = FILES_URL + "/{filename}"
+    name = f"api:{DOMAIN}:files"
+    requires_auth = True
+
+    async def get(self, request: web.Request, filename: str) -> web.StreamResponse:
+        hass: HomeAssistant = request.app["hass"]
+        path = await hass.async_add_executor_job(_resolve_upload, files_dir(hass), filename)
+        if path is None:
+            return web.Response(status=404)
+        return web.FileResponse(
+            path,
+            headers={
+                "Content-Type": _UPLOAD_MIME[os.path.splitext(path)[1].lower()],
+                "Cache-Control": "private, max-age=31536000, immutable",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
 
 class UploadView(HomeAssistantView):

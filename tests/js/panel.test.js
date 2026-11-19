@@ -147,7 +147,7 @@ test('add character on the Dated screen: date trigger preset, name defaults, upl
   Object.defineProperty(input, 'files', { value: [file] });
   change(input);
   await wait(30);
-  assert.ok(sr.querySelector('.mbody img[src*="up-12345678"]'));
+  assert.ok(sr.querySelector('.mbody img[data-asrc*="up-12345678"]'));
   sr.querySelector('[data-act="save"]').click();
   await wait(20);
   const save = call('save_item');
@@ -568,4 +568,24 @@ test('a new popup starts from the edge chosen in Settings, and Settings saves it
   sr.querySelector('[data-act="save-settings"]').click();
   await wait();
   assert.strictEqual(call('save_settings').settings.popup_default_edge, 'right');
+});
+
+test('uploaded pictures in the panel are fetched with the login; bundled art uses a normal src', async () => {
+  const up = '/dashboard_holiday_popups_files/kid-1a2b3c4d.gif';
+  const bundled = '/dashboard_holiday_popups_static/1.0.5/images/lion.webp';
+  const { w, hass, sr, send, wait } = await boot([base({ id: 'u', image_url: up }), base({ id: 'b', order: 2, image_url: bundled })]);
+  const fetched = [];
+  w.URL.createObjectURL = () => 'blob:panel-pic';
+  w.URL.revokeObjectURL = () => {};
+  hass.fetchWithAuth = async (u) => { fetched.push(u); return { ok: true, blob: async () => ({ type: 'image/gif' }) }; };
+  send([base({ id: 'u', image_url: up }), base({ id: 'b', order: 2, image_url: bundled })], []);
+  await wait(40);
+  const mine = sr.querySelector(`img[data-asrc="${up}"]`);
+  assert.ok(mine, 'uploaded picture waits for the login');
+  assert.strictEqual(mine.getAttribute('src'), 'blob:panel-pic');
+  assert.strictEqual(sr.querySelector(`img[src="${bundled}"]`) !== null, true);
+  assert.deepStrictEqual(fetched, [up], 'fetched once with the login, bundled art not fetched');
+  send([base({ id: 'u', image_url: up, name: 'Renamed' }), base({ id: 'b', order: 2, image_url: bundled })], []);
+  await wait(40);
+  assert.deepStrictEqual(fetched, [up], 'a redraw reuses the picture already loaded');
 });

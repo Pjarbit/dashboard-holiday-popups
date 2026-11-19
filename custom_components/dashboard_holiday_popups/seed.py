@@ -1,4 +1,4 @@
-# Integration version: 1.0.4
+# Integration version: 1.0.6
 """Starter items created on first run. All art ships in the defaults folder."""
 from __future__ import annotations
 

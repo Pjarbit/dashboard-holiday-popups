@@ -1,8 +1,8 @@
-/* Dashboard Holiday Popups settings panel  pja v1.0.4
+/* Dashboard Holiday Popups settings panel  pja v1.0.6
    Plain web component (no external library). Same dark look as the Advanced Group Sensor panel. */
 (() => {
   'use strict';
-  const VERSION = '1.0.4'; // pja v1.0.4
+  const VERSION = '1.0.6'; // pja v1.0.6
   const DOMAIN = 'dashboard_holiday_popups';
   const ELEMENT = 'dashboard-holiday-popups-panel';
   if (customElements.get(ELEMENT)) return;
@@ -20,6 +20,10 @@
   const KIND_PLURAL = { floater: 'Characters', popup: 'Popups', decoration: 'Decorations' };
 
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Your own uploaded pictures are served to signed-in users only, so <img> cannot load them by address:
+  // they get data-asrc and are fetched with the panel's login (see _hydrateImages). Bundled art loads directly.
+  const UPLOADS_PREFIX = `/${DOMAIN}_files/`;
+  const imgSrc = (url) => (String(url).startsWith(UPLOADS_PREFIX) ? `data-asrc="${esc(url)}"` : `src="${esc(url)}"`);
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
   function setPath(o, p, v) {
@@ -277,6 +281,8 @@
     button.b:hover{border-color:rgba(99,179,237,.5)}
     button.primary{background:linear-gradient(180deg,#5ab2e8,#2d7ab5);border-color:rgba(99,179,237,.5);color:#fff;font-weight:700}
     button.danger{color:#fc8181}
+    button.b.alloff{background:#e02424;border-color:#ff6b6b;color:#fff;font-weight:700}
+    button.b.alloff:hover{background:#ff3030;border-color:#fff}
     .field{display:flex;flex-direction:column;gap:5px}
     .field>label,.lab{font-size:.9rem;font-weight:500;color:#cbd5e0}
     input[type=text],input[type=number],select,textarea{width:100%;padding:9px 12px;background:#0d0f18;border:1px solid rgba(255,255,255,.1);
@@ -359,6 +365,7 @@
     disconnectedCallback() {
       if (this._unsub) { try { this._unsub(); } catch { /* closed */ } this._unsub = null; }
       cancelAnimationFrame(this._raf);
+      if (this._blobs) { for (const u of this._blobs.values()) URL.revokeObjectURL(u); this._blobs = null; }
     }
 
     async _init() {
@@ -392,6 +399,35 @@
         if (body) body.scrollTop = keepScroll;
         this._startPreview();
       } else cancelAnimationFrame(this._raf);
+      this._hydrateImages();
+    }
+
+    /** Fill in the uploaded pictures: fetch each once with the signed-in login and keep it as a blob URL. */
+    _hydrateImages() {
+      const imgs = [...this.shadowRoot.querySelectorAll('img[data-asrc]')];
+      if (!imgs.length) return;
+      const cache = this._blobs || (this._blobs = new Map());
+      const wanted = new Set();
+      for (const img of imgs) {
+        const hit = cache.get(img.dataset.asrc);
+        if (hit) img.src = hit; else wanted.add(img.dataset.asrc);
+      }
+      if (!wanted.size || !this._hass || typeof this._hass.fetchWithAuth !== 'function') return;
+      const loading = this._loading || (this._loading = new Set());
+      for (const url of wanted) {
+        if (loading.has(url)) continue;
+        loading.add(url);
+        this._hass.fetchWithAuth(url)
+          .then(async (r) => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const b = await r.blob();
+            if (!b.type.startsWith('image')) throw new Error('not an image');
+            cache.set(url, URL.createObjectURL(b));
+            for (const img of this.shadowRoot.querySelectorAll('img[data-asrc]')) if (img.dataset.asrc === url) img.src = cache.get(url);
+          })
+          .catch(() => { /* shown again on the next redraw */ })
+          .finally(() => loading.delete(url));
+      }
     }
 
     _dashList() {
@@ -440,7 +476,7 @@
     _itemsTab(sensors) {
       const all = this._config.items.filter((i) => isSensorItem(i) === sensors).sort((a, b) => a.order - b.order);
       const adds = ['floater', 'popup', 'decoration'].map((k) => `<button class="b primary" data-act="add" data-kind="${k}">Add Custom ${KIND_NAME[k][0].toUpperCase() + KIND_NAME[k].slice(1)}</button>`).join('');
-      const off = all.some((i) => i.enabled) ? '<button class="b" data-act="all-off">Turn all off</button>' : '';
+      const off = all.some((i) => i.enabled) ? `<button class="b alloff" data-act="all-off" title="${sensors ? 'Turns off every item on this screen' : 'Turns off every item on this screen, including ones set to run on dates'}">${sensors ? 'Turn all off' : 'Turn all off (includes dated)'}</button>` : '';
       const intro = sensors
         ? '<div class="hint">Items that show when a weather or sensor condition is met. Starter items arrive without a sensor chosen: press Edit and pick the entity.</div>'
         : '<div class="hint">Items that show on dates, or all the time. <b>Run now</b> shows one until you press Stop, whatever its dates.</div>';
@@ -476,7 +512,7 @@
         ? `<label class="sw" title="Locked while its scene is on"><input type="checkbox" disabled><span style="opacity:.4"></span></label>`
         : `<label class="sw" title="Pause or resume"><input type="checkbox" data-act="toggle-item" data-id="${esc(i.id)}" ${i.enabled ? 'checked' : ''}><span></span></label>`;
       return `<div class="card item" data-id="${esc(i.id)}">
-        ${i.image_url ? `<img class="thumb" src="${esc(i.image_url)}" alt="">` : '<div class="thumb"></div>'}
+        ${i.image_url ? `<img class="thumb" ${imgSrc(i.image_url)} alt="">` : '<div class="thumb"></div>'}
         <div class="grow"><div class="name">${esc(i.name)}${i.running ? '<span class="tag run">Running</span>' : ''}${live.length ? `<span class="tag sceneon">On via scene: ${esc(live.map((sc) => sc.name).join(', '))}</span>` : (scenes.length ? `<span class="tag scene">In scene: ${esc(scenes.map((sc) => sc.name).join(', '))}</span>` : '')}${muted ? '<span class="tag warnt">Pushed away for now</span>' : ''}</div>
           <div class="sub">${esc(this._summary(i))}</div>${this._whenLines(i)}</div>
         ${toggle}
@@ -502,7 +538,7 @@
         return `<div class="card item" data-id="${esc(sc.id)}"><div class="grow">
           <div class="name">${esc(sc.name)}${sc.running ? '<span class="tag run">Running</span>' : ''}</div>
           <div class="sumline">${esc(describeRule(sc.recurrence))}</div><div class="sub">${esc(nextText(sc.recurrence))} · ${members.length} item${members.length === 1 ? '' : 's'}</div>
-          <div class="thumbs">${members.slice(0, 8).map((m) => (m.image_url ? `<img src="${esc(m.image_url)}" alt="" title="${esc(m.name)}">` : '')).join('')}</div></div>
+          <div class="thumbs">${members.slice(0, 8).map((m) => (m.image_url ? `<img ${imgSrc(m.image_url)} alt="" title="${esc(m.name)}">` : '')).join('')}</div></div>
           <label class="sw" title="Pause or resume this scene"><input type="checkbox" data-act="toggle-scene" data-id="${esc(sc.id)}" ${sc.enabled ? 'checked' : ''}><span></span></label>
           <div class="btns"><button class="b ${sc.running ? 'primary' : ''}" data-act="run-scene" data-id="${esc(sc.id)}">${sc.running ? 'Stop' : 'Run now'}</button>
             <button class="b" data-act="edit-scene" data-id="${esc(sc.id)}">Edit</button>
@@ -553,7 +589,7 @@
     _editor() {
       const d = this._draft;
       const kindName = { floater: 'character', popup: 'popup', decoration: 'decoration' }[d.kind];
-      const img = d.image_url ? `<img src="${esc(d.image_url)}" alt="" style="max-height:110px;max-width:100%;object-fit:contain;background:#0d0f18;border-radius:8px;padding:6px">` : '<div class="hint">No image yet.</div>';
+      const img = d.image_url ? `<img ${imgSrc(d.image_url)} alt="" style="max-height:110px;max-width:100%;object-fit:contain;background:#0d0f18;border-radius:8px;padding:6px">` : '<div class="hint">No image yet.</div>';
       let specific = '';
       if (d.kind === 'floater') specific = this._floaterFields();
       if (d.kind === 'popup') specific = this._popupFields();
@@ -613,7 +649,7 @@
             if (checked && clash) clashes++;
             return `<div class="warn">⚠ Already in the scene “${esc(sc.name)}”${clash ? ', and its dates overlap with this scene. It will show whenever either scene is on.' : ' (on different dates).'}</div>`;
           }).join('');
-          return `<label class="pick"><input type="checkbox" data-sitem="${esc(i.id)}" ${checked ? 'checked' : ''}>${i.image_url ? `<img src="${esc(i.image_url)}" alt="">` : ''}
+          return `<label class="pick"><input type="checkbox" data-sitem="${esc(i.id)}" ${checked ? 'checked' : ''}>${i.image_url ? `<img ${imgSrc(i.image_url)} alt="">` : ''}
             <span class="grow"><span class="name">${esc(i.name)}</span>${notes}</span></label>`;
         }).join('');
       }).join('');
@@ -680,7 +716,7 @@
       const motionRel = d.path === 'free_float';
       const arc = d.path === 'curve_arc';
       return `<div class="card"><div class="card-h">Movement</div><div class="card-b">
-        <div class="preview" id="preview">${d.image_url ? `<img id="pimg" src="${esc(d.image_url)}" alt="">` : '<div class="hint" style="padding:12px">Add an image to see the movement.</div>'}</div>
+        <div class="preview" id="preview">${d.image_url ? `<img id="pimg" ${imgSrc(d.image_url)} alt="">` : '<div class="hint" style="padding:12px">Add an image to see the movement.</div>'}</div>
         ${this._f('Path', 'path', 'select', { options: [['bottom_straight', 'Walk along the bottom'], ['top_straight', 'Walk along the top'], ['free_float', 'Float freely or stay in place'], ['curve_arc', 'Curved path across the screen']] })}
         ${motionRel ? this._f('Motion', 'motion', 'select', { options: [['drift', 'Drift around (random)'], ['bob_vertical', 'Bob up and down'], ['sway_horizontal', 'Sway side to side'], ['circle', 'Circle']] }) : ''}
         ${arc ? this._f('Wave shape', 'wave_shape', 'select', { options: [['sine', 'Smooth curve'], ['zigzag', 'Zigzag (W / M shape)']] }) + this._f('Peaks across the screen', 'peaks', 'number', { min: 1, max: 10 }) : ''}
@@ -1036,7 +1072,7 @@
     async _allOff() {
       const sensors = this._tab === 'sensors';
       const ids = this._config.items.filter((i) => isSensorItem(i) === sensors && i.enabled).map((i) => i.id);
-      if (!ids.length || !window.confirm(`Turn off ${ids.length} item${ids.length === 1 ? '' : 's'} on this screen? You can switch each one back on.`)) return;
+      if (!ids.length || !window.confirm(`Turn off ${ids.length} item${ids.length === 1 ? '' : 's'} on this screen?${sensors ? '' : ' CAUTION: this includes items set to run on dates, such as birthdays and holidays. They will not appear on their dates until you switch them back on.'} You can switch each one back on.`)) return;
       try {
         const res = await this._ws({ type: `${DOMAIN}/disable_all`, item_ids: ids });
         this._flash('ok', `Turned off ${res.changed}.`);

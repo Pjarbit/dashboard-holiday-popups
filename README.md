@@ -17,7 +17,7 @@ Animated characters, timed popups and decorations that float over your Home Assi
 
 ## Install
 
-1. HACS → Integrations → three dots → Custom repositories → add `https://github.com/Pjarbit/dashboard-holiday-popups` as *Integration*, then download it.
+1. Search for **Dashboard Holiday Popups** in the Home Assistant Marketplace (HACS) and download it. If it doesn't show up in search yet, use **Add from link** (or, in classic HACS, three dots → Custom repositories) with `https://github.com/Pjarbit/dashboard-holiday-popups` as an *Integration*, then download it.
 2. Restart Home Assistant.
 3. Settings → Devices & services → Add integration → **Dashboard Holiday Popups**.
 4. Open **Holiday Popups** in the sidebar (administrators only).
@@ -249,7 +249,7 @@ Upload them in the panel itself; there is no folder to copy files into.
 3. In the **Basics** box, under **Image**, press **Choose file** and pick your GIF, WebP, APNG or PNG (up to 5 MB).
 4. Set its size, how it moves and when it shows, then **Save**.
 
-Uploads are stored for you in `/config/dashboard_holiday_popups/`. To swap the picture on an existing item, edit it and choose a new file.
+Uploads are stored for you in `/config/dashboard_holiday_popups/` and are only served to signed-in Home Assistant users (not to anyone who knows the address), so pictures of family stay private. Old links that pointed straight at `/dashboard_holiday_popups_files/...` from outside Home Assistant need a login too. To swap the picture on an existing item, edit it and choose a new file.
 
 Leave **Dashboards** empty to use the default list from Settings; an empty default list means every dashboard. Settings pages, developer tools and the profile page never show anything.
 
