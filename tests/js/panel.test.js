@@ -589,3 +589,16 @@ test('uploaded pictures in the panel are fetched with the login; bundled art use
   await wait(40);
   assert.deepStrictEqual(fetched, [up], 'a redraw reuses the picture already loaded');
 });
+
+test('Settings has a hide-on-small-screens switch that saves', async () => {
+  const { sr, change, wait, call } = await boot([base()], {}, [], { hide_on_small_screens: false });
+  sr.querySelector('[data-tab="settings"]').click();
+  await wait(20);
+  const box = sr.querySelector('[data-s="hide_on_small_screens"]');
+  assert.ok(box, 'switch is shown');
+  assert.strictEqual(box.checked, false);
+  box.checked = true; change(box);
+  sr.querySelector('[data-act="save-settings"]').click();
+  await wait(20);
+  assert.strictEqual(call('save_settings').settings.hide_on_small_screens, true);
+});

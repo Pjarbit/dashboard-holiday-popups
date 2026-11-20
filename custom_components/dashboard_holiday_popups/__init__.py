@@ -1,5 +1,5 @@
 """Dashboard Holiday Popups: animated characters, popups and decorations over dashboards."""
-# Integration version: 1.0.6
+# Integration version: 1.0.7
 from __future__ import annotations
 
 import hashlib

@@ -1,8 +1,8 @@
-/* Dashboard Holiday Popups settings panel  pja v1.0.6
+/* Dashboard Holiday Popups settings panel  pja v1.0.7
    Plain web component (no external library). Same dark look as the Advanced Group Sensor panel. */
 (() => {
   'use strict';
-  const VERSION = '1.0.6'; // pja v1.0.6
+  const VERSION = '1.0.7'; // pja v1.0.7
   const DOMAIN = 'dashboard_holiday_popups';
   const ELEMENT = 'dashboard-holiday-popups-panel';
   if (customElements.get(ELEMENT)) return;
@@ -561,6 +561,8 @@
         <div class="field"><label>New popups start from</label><select data-s="popup_default_edge">${[['left', 'Left'], ['right', 'Right'], ['top', 'Top'], ['bottom', 'Bottom']].map(([v, t]) => `<option value="${v}" ${s.popup_default_edge === v ? 'selected' : ''}>${t}</option>`).join('')}</select><div class="hint">The edge a new popup comes in from and is drawn for. Popups you already have keep their own.</div></div>
         <div class="swrow"><span class="lab">Hide characters and popups when the device asks for reduced motion</span><label class="sw"><input type="checkbox" data-s="respect_reduced_motion" ${s.respect_reduced_motion ? 'checked' : ''}><span></span></label></div>
         <div class="hint">Decorations still show. Run now and the show_popup service always work.</div>
+        <div class="swrow"><span class="lab">Hide everything on small screens (phones)</span><label class="sw"><input type="checkbox" data-s="hide_on_small_screens" ${s.hide_on_small_screens ? 'checked' : ''}><span></span></label></div>
+        <div class="hint">Nothing is drawn while the screen is narrower than 600 pixels, including Run now and the show_popup service. A phone turned sideways is wide enough to show them again.</div>
         <div class="btns" style="justify-content:flex-start"><button class="b primary" data-act="save-settings">Save settings</button></div>
         <div class="hint">Automations can use the services <b>${DOMAIN}.show_popup</b>, <b>${DOMAIN}.hide_all</b> and <b>${DOMAIN}.set_enabled</b>. The master switch and each scene have a switch entity. Items you add yourself get one too; the starter items' switches are hidden until you enable them in the entity settings.</div>
       </div></div>`;
@@ -1088,6 +1090,7 @@
         scale: Number(q('scale').value),
         popup_default_edge: q('popup_default_edge').value,
         respect_reduced_motion: q('respect_reduced_motion').checked,
+        hide_on_small_screens: q('hide_on_small_screens').checked,
         default_dashboards: q('default_dashboards').value.split('\n').map((s) => s.trim()).filter(Boolean),
       };
       try { await this._ws({ type: `${DOMAIN}/save_settings`, settings }); this._flash('ok', 'Settings saved.'); }

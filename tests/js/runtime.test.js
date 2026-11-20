@@ -343,3 +343,29 @@ test('an uploaded picture waits for the Home Assistant login instead of fetching
   assert.deepStrictEqual(authed, ['/dashboard_holiday_popups_files/kid-1a2b3c4d.gif']);
   assert.deepStrictEqual(plain, []);
 });
+
+test('hide on small screens: nothing is drawn on a phone-width page, and it returns when the page is wide', async () => {
+  const off = await boot({ cfg: config([item(), deco({ order: 2 })], { hide_on_small_screens: true }) });
+  assert.strictEqual(off.shadow.querySelectorAll('.it, .deco').length, 2, 'wide page: shown');
+  off.w.innerWidth = 390;
+  await tick(1200);
+  assert.strictEqual(off.shadow.querySelectorAll('.it, .deco').length, 0, 'phone width: nothing drawn');
+  off.w.innerWidth = 844;
+  await tick(1200);
+  assert.strictEqual(off.shadow.querySelectorAll('.it, .deco').length, 2, 'turned sideways: shown again');
+});
+
+test('hide on small screens does nothing while the setting is off, and also stops Run now', async () => {
+  const w = makeWindow();
+  w.innerWidth = 390;
+  const { subs } = fakeHass(w);
+  loadRuntime(w);
+  await tick(700);
+  subs[0].cb(config([item()], { hide_on_small_screens: false }));
+  await tick(80);
+  const shadow = w.document.getElementById('dashboard-holiday-popups-host').shadowRoot;
+  assert.strictEqual(shadow.querySelectorAll('.it').length, 1, 'setting off: still shown on a narrow page');
+  subs[0].cb(config([item({ running: true })], { hide_on_small_screens: true }));
+  await tick(1200);
+  assert.strictEqual(shadow.querySelectorAll('.it').length, 0, 'setting on: even Run now is hidden');
+});

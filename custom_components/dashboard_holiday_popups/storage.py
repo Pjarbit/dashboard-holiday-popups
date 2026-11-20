@@ -1,5 +1,5 @@
 """Persistent store for items and settings, plus validation."""
-# Integration version: 1.0.6
+# Integration version: 1.0.7
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -87,6 +87,7 @@ def default_settings() -> dict[str, Any]:
         "z_index": 900,
         "default_dashboards": [],
         "respect_reduced_motion": True,
+        "hide_on_small_screens": False,
         "scale": 100,
         "popup_default_edge": "left",
     }
@@ -101,6 +102,8 @@ def normalize_settings(raw: dict[str, Any], current: dict[str, Any] | None = Non
         "z_index": _num(base["z_index"], 900, 1, 100000, True),
         "default_dashboards": _paths_list(base["default_dashboards"]),
         "respect_reduced_motion": _bool(base["respect_reduced_motion"], True),
+        # Draw nothing on a narrow screen (a phone held upright).
+        "hide_on_small_screens": _bool(base["hide_on_small_screens"], False),
         # Every character, popup and decoration is drawn this many percent of its own size.
         "scale": _num(base["scale"], 100, 25, 400, True),
         # The edge a NEW custom popup peeks in from, and is drawn for. Existing popups keep their own.

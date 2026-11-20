@@ -1,14 +1,15 @@
-/* Dashboard Holiday Popups runtime  pja v1.0.6
+/* Dashboard Holiday Popups runtime  pja v1.0.7
    Loaded on every Home Assistant page by the integration. Decides per page whether to draw
    anything, then animates floaters, popups and decorations over the dashboard. */
 (() => {
   'use strict';
-  const VERSION = '1.0.6'; // pja v1.0.6
+  const VERSION = '1.0.7'; // pja v1.0.7
   if (window.__dhpRuntime) return;
   window.__dhpRuntime = VERSION;
 
   const DOMAIN = 'dashboard_holiday_popups';
   const RETRY_IMAGE_MS = 10000;
+  const SMALL_SCREEN_PX = 600;   // narrower than this counts as a phone
   const WAIT_HASS_MS = 500;      // the page is not ready yet: look again soon
   const UPLOADS_PREFIX = `/${DOMAIN}_files/`; // your own pictures: served to signed-in users only
   const EDGE_MARGIN = 80;       // release within this many px of an edge = pushed off
@@ -182,6 +183,8 @@
   // or called show_popup. Decorations are still pictures, so they stay. Settings can turn this off.
   const reduceQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   const reducedMotion = () => !!(reduceQuery && reduceQuery.matches);
+  // "Hide on small screens" in Settings: draw nothing while the page is narrower than a phone held upright.
+  const hiddenOnSmallScreen = () => !!(config.settings && config.settings.hide_on_small_screens === true) && window.innerWidth < SMALL_SCREEN_PX;
 
   const rectsOverlap = (a, b, gap) =>
     a.x < b.x + b.w + gap && a.x + a.w + gap > b.x && a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
@@ -737,6 +740,7 @@
     const states = hass ? hass.states : null;
     const s = config.settings;
     const cap = s.max_simultaneous;
+    const smallScreen = hiddenOnSmallScreen();
 
     const sorted = [...config.items].sort((a, b) => a.order - b.order);
     let maxZ = s.z_index;
@@ -770,7 +774,7 @@
       const active = !!item.running || (scened ? sceneShows.has(item.id) : item.enabled && trig.active);
       const motionBlocked = item.kind !== 'decoration' && s.respect_reduced_motion !== false && reducedMotion()
         && !item.running && !(manual.get(item.id) > Date.now());
-      const live = !motionBlocked && s.enabled && ready && pageMatches(item) && (active || popupHasWork);
+      const live = !motionBlocked && !smallScreen && s.enabled && ready && pageMatches(item) && (active || popupHasWork);
       if (item.kind === 'popup') {
         updatePopupSchedule(item, live && active, trigName, nowMs);
       }
@@ -1002,6 +1006,7 @@
 
   // The show_popup service must show the item even when its triggers or page rules are not met.
   function showNow(item) {
+    if (hiddenOnSmallScreen()) return;
     const rec = ensureImage(item.image_url);
     if (!rec || rec.status !== 'ready') return;
     if (item.kind === 'popup') {

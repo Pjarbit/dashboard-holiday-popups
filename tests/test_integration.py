@@ -332,6 +332,16 @@ async def test_reduced_motion_setting_defaults_on_and_saves(hass, setup_integrat
     assert (await client.receive_json())["result"]["settings"]["respect_reduced_motion"] is False
 
 
+async def test_hide_on_small_screens_setting_defaults_off_and_saves(hass, setup_integration, hass_ws_client):
+    store = get_store(hass)
+    assert store.settings["hide_on_small_screens"] is False
+    client = await hass_ws_client(hass)
+    await client.send_json({"id": 1, "type": f"{DOMAIN}/save_settings", "settings": {"hide_on_small_screens": True}})
+    assert (await client.receive_json())["result"]["settings"]["hide_on_small_screens"] is True
+    await client.send_json({"id": 2, "type": f"{DOMAIN}/save_settings", "settings": {"hide_on_small_screens": "nonsense"}})
+    assert (await client.receive_json())["result"]["settings"]["hide_on_small_screens"] is False
+
+
 async def test_run_now_and_stop_all_over_the_websocket(hass, setup_integration, hass_ws_client):
     store = get_store(hass)
     client = await hass_ws_client(hass)
