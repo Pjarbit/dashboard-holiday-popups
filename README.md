@@ -254,6 +254,8 @@ Leave **Dashboards** empty to use the default list from Settings; an empty defau
 | Service | Fields | What it does |
 |---|---|---|
 | `dashboard_holiday_popups.show_popup` | `item`, `message` (optional), `duration` (optional) | Shows a popup or character for a moment, then it goes away (use Run now in the panel to keep one showing). `item` is the item's name. |
+| `dashboard_holiday_popups.run_item` | `item` | Same as **Run now** in the panel: shows the item right away and keeps it showing until you stop it. Its dates are not changed. |
+| `dashboard_holiday_popups.stop_item` | `item` | Same as **Stop** on that item. Its dates are not changed. |
 | `dashboard_holiday_popups.hide_all` | none | Hides everything shown right now. |
 | `dashboard_holiday_popups.set_enabled` | `item`, `enabled` | Pauses or resumes an item. |
 

@@ -1,5 +1,5 @@
 """Dashboard Holiday Popups: animated characters, popups and decorations over dashboards."""
-# Integration version: 1.0.7
+# Integration version: 1.0.8
 from __future__ import annotations
 
 import hashlib
@@ -135,7 +135,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         store.shutdown()
     frontend.remove_extra_js_url(hass, RUNTIME_JS_URL)
     frontend.async_remove_panel(hass, PANEL_URL_PATH, warn_if_unknown=False)
-    for service in (SERVICE_SHOW_POPUP, SERVICE_HIDE_ALL, SERVICE_SET_ENABLED):
+    for service in (SERVICE_SHOW_POPUP, SERVICE_HIDE_ALL, SERVICE_SET_ENABLED, SERVICE_RUN_ITEM, SERVICE_STOP_ITEM):
         hass.services.async_remove(DOMAIN, service)
     return True
 
@@ -153,6 +153,8 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 SERVICE_SHOW_POPUP = "show_popup"
 SERVICE_HIDE_ALL = "hide_all"
 SERVICE_SET_ENABLED = "set_enabled"
+SERVICE_RUN_ITEM = "run_item"
+SERVICE_STOP_ITEM = "stop_item"
 
 
 def _register_services(hass: HomeAssistant) -> None:
@@ -186,6 +188,19 @@ def _register_services(hass: HomeAssistant) -> None:
             raise vol.Invalid(f"No item with id or name {call.data['item']!r}")
         await store.async_set_item_enabled(item["id"], call.data["enabled"])
 
+    def _set_running(running: bool):
+        async def handler(call: ServiceCall) -> None:
+            store = get_store(hass)
+            if store is None:
+                return
+            item = store.find_item(call.data["item"])
+            if item is None:
+                raise vol.Invalid(f"No item with id or name {call.data['item']!r}")
+            # Same as Run now / Stop in the panel: only the running flag changes, its dates are left alone.
+            await store.async_set_running(item["id"], running)
+
+        return handler
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SHOW_POPUP,
@@ -205,6 +220,8 @@ def _register_services(hass: HomeAssistant) -> None:
         set_enabled,
         schema=vol.Schema({vol.Required("item"): cv.string, vol.Required("enabled"): cv.boolean}),
     )
+    for service, running in ((SERVICE_RUN_ITEM, True), (SERVICE_STOP_ITEM, False)):
+        hass.services.async_register(DOMAIN, service, _set_running(running), schema=vol.Schema({vol.Required("item"): cv.string}))
 
 
 # ---------------------------------------------------------------------------

@@ -47,6 +47,26 @@
       "name": "Hide all",
       "description": "Dismisses every popup now and hides all characters for a minute."
     },
+    "run_item": {
+      "name": "Run item",
+      "description": "Same as Run now in the panel: shows the item right now and keeps it showing until stopped. Its dates are left alone.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "Name or id of the item."
+        }
+      }
+    },
+    "stop_item": {
+      "name": "Stop item",
+      "description": "Same as Stop in the panel: ends a Run now for the item. Its dates are left alone.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "Name or id of the item."
+        }
+      }
+    },
     "set_enabled": {
       "name": "Set enabled",
       "description": "Pauses or resumes one item.",

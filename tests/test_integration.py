@@ -20,7 +20,7 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 40
 async def test_setup_registers_everything(hass, setup_integration):
     assert RUNTIME_JS_URL in hass.data[DATA_EXTRA_MODULE_URL].urls
     assert async_panel_exists(hass, PANEL_URL_PATH)
-    for service in ("show_popup", "hide_all", "set_enabled"):
+    for service in ("show_popup", "hide_all", "set_enabled", "run_item", "stop_item"):
         assert hass.services.has_service(DOMAIN, service)
     assert hass.states.get("switch.dashboard_holiday_popups") is not None
     assert "?" not in RUNTIME_JS_URL
@@ -31,7 +31,7 @@ async def test_unload_removes_everything(hass, setup_integration):
     await hass.async_block_till_done()
     assert RUNTIME_JS_URL not in hass.data[DATA_EXTRA_MODULE_URL].urls
     assert not async_panel_exists(hass, PANEL_URL_PATH)
-    for service in ("show_popup", "hide_all", "set_enabled"):
+    for service in ("show_popup", "hide_all", "set_enabled", "run_item", "stop_item"):
         assert not hass.services.has_service(DOMAIN, service)
     assert get_store(hass) is None
 
@@ -330,6 +330,22 @@ async def test_reduced_motion_setting_defaults_on_and_saves(hass, setup_integrat
     client = await hass_ws_client(hass)
     await client.send_json({"id": 1, "type": f"{DOMAIN}/save_settings", "settings": {"respect_reduced_motion": False}})
     assert (await client.receive_json())["result"]["settings"]["respect_reduced_motion"] is False
+
+
+async def test_run_item_and_stop_item_services_leave_dates_alone(hass, setup_integration):
+    store = get_store(hass)
+    witch = store.find_item("Flying witch")
+    before = (witch["enabled"], list(witch["triggers"]))
+    assert witch["running"] is False
+    await hass.services.async_call(DOMAIN, "run_item", {"item": "flying witch"}, blocking=True)
+    assert store.find_item("Flying witch")["running"] is True
+    assert (store.find_item("Flying witch")["enabled"], list(store.find_item("Flying witch")["triggers"])) == before
+    await hass.services.async_call(DOMAIN, "stop_item", {"item": "Flying witch"}, blocking=True)
+    assert store.find_item("Flying witch")["running"] is False
+    assert (store.find_item("Flying witch")["enabled"], list(store.find_item("Flying witch")["triggers"])) == before
+    for service in ("run_item", "stop_item"):
+        with pytest.raises(Exception):
+            await hass.services.async_call(DOMAIN, service, {"item": "nope"}, blocking=True)
 
 
 async def test_hide_on_small_screens_setting_defaults_off_and_saves(hass, setup_integration, hass_ws_client):

@@ -19,6 +19,20 @@ show_popup:
           max: 600
           unit_of_measurement: s
 hide_all:
+run_item:
+  fields:
+    item:
+      required: true
+      example: "Birthday Lion"
+      selector:
+        text:
+stop_item:
+  fields:
+    item:
+      required: true
+      example: "Birthday Lion"
+      selector:
+        text:
 set_enabled:
   fields:
     item:

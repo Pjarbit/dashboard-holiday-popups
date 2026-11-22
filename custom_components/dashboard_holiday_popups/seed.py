@@ -1,4 +1,4 @@
-# Integration version: 1.0.7
+# Integration version: 1.0.8
 """Starter items created on first run. All art ships in the defaults folder."""
 from __future__ import annotations
 
@@ -101,8 +101,6 @@ def seed_items() -> list[dict[str, Any]]:
         _walk("Flying Santa", "flying-santa.gif", CHRISTMAS, True, size=200, path="curve_arc", speed=120,
               wave_shape="sine", amplitude_px=90, peaks=2),
         _popup("Santa popup", "popup-santa.gif", CHRISTMAS, True),
-        _popup("Monster popup", "green-xmas-monster.gif", CHRISTMAS, True),
-        
         # --- Birthday (user enters the dates) ---
         _walk("Birthday cake walking", "birthday-cake-walking.gif"),
         _popup("Birthday boy popup", "birthday-boy-popup.webp"),
