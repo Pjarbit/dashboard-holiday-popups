@@ -326,6 +326,13 @@ def builtin_items() -> list[dict[str, Any]]:
     return [normalize_item(raw, None, order) for order, raw in enumerate(seed_items(), 1)]
 
 
+def seed_files() -> list[str]:
+    """The picture file of every starter item. It identifies a starter, so one you deleted is not re-added."""
+    from .seed import seed_items  # noqa: PLC0415
+
+    return [raw["image"]["file"] for raw in seed_items()]
+
+
 class PopupStore:
     """Items and settings, saved through the Home Assistant Store helper."""
 
@@ -339,6 +346,7 @@ class PopupStore:
         stored = await self._store.async_load()
         if stored is None:
             self._data["items"] = builtin_items()
+            self._data["seeded"] = seed_files()
             self._data["next_order"] = len(self._data["items"]) + 1
             await self._store.async_save(self._data)
             return
@@ -359,13 +367,36 @@ class PopupStore:
                 continue
             scene["item_ids"] = [i for i in scene["item_ids"] if i in known]
             scenes.append(scene)
+        from .seed import ADDED_AFTER_1_0_7, seed_items  # noqa: PLC0415
+
+        seeded = stored.get("seeded")
+        migrated = not isinstance(seeded, list)
+        if migrated:
+            # Saved by 1.0.7 or earlier: treat every starter that existed then as already offered.
+            offered = {f for f in seed_files() if f not in ADDED_AFTER_1_0_7}
+        else:
+            offered = {f for f in seeded if isinstance(f, str)}
         self._data = {
             "settings": settings,
             "items": items,
             "scenes": scenes,
+            "seeded": sorted(offered),
             "next_order": max([x["order"] for x in items + scenes], default=0) + 1,
         }
         self._prune_mutes()
+
+        added = False
+        for raw in seed_items():
+            file = raw["image"]["file"]
+            if file in offered:
+                continue
+            self._data["items"].append(normalize_item(raw, None, self._data["next_order"]))
+            self._data["next_order"] += 1
+            offered.add(file)
+            added = True
+        if added or migrated:
+            self._data["seeded"] = sorted(offered)
+            await self._store.async_save(self._data)
 
     # -- listeners -------------------------------------------------------
 
