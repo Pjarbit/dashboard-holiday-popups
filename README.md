@@ -81,6 +81,7 @@ Every starter item, grouped by holiday. The pictures animate on GitHub. Each hea
 | <img src="custom_components/dashboard_holiday_popups/defaults/corner-xmas.png" height="90" alt="Christmas corner"> | Christmas corner | Decoration |
 | <img src="custom_components/dashboard_holiday_popups/defaults/flying-santa.gif" height="90" alt="Flying Santa"> | Flying Santa | Character |
 | <img src="custom_components/dashboard_holiday_popups/defaults/popup-santa.gif" height="90" alt="Santa popup"> | Santa popup | Popup |
+| <img src="custom_components/dashboard_holiday_popups/defaults/green-xmas-monster.gif" height="90" alt="Monster popup"> | Monster popup | Popup |
 
 #### Birthday (paused, you set the dates)
 
