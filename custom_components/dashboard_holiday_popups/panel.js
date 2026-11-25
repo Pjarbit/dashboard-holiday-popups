@@ -329,7 +329,6 @@
     .pick:first-of-type{border-top:none}
     .pick img{width:34px;height:34px;object-fit:contain;background:#0d0f18;border-radius:6px;flex:none}
     .sumline{font-size:.84rem;color:#63b3ed}
-    .sumline.live{color:#2fcf76}
     .sumline.paused{color:#f6ad55}
     .thumbs{display:flex;gap:4px;margin-top:6px}.thumbs img{width:26px;height:26px;object-fit:contain;background:#0d0f18;border-radius:5px}
     input[type=date]{width:100%;padding:9px 12px;background:#0d0f18;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e2e8f0;font:.9rem 'DM Sans',sans-serif;color-scheme:dark}
@@ -500,7 +499,7 @@
     _whenLines(i) {
       const scenes = this._scenesOf(i.id);
       const head = scenes.length ? `<div class="sumline">Also shows when a scene is on: ${esc(scenes.map((sc) => sc.name).join(', '))}</div>` : '';
-      // green while the item is switched on, orange with "Paused" in front while it is switched off
+      // standard blue while the item is switched on, orange with "Paused" in front while it is switched off
       const cls = i.enabled ? 'sumline live' : 'sumline paused';
       const lead = i.enabled ? '' : 'Paused · ';
       if (!i.triggers.length) return head + `<div class="${cls}">${lead}Shows all the time while switched on</div>`;
