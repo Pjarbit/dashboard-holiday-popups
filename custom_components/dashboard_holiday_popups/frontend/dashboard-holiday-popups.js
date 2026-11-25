@@ -1,9 +1,9 @@
-/* Dashboard Holiday Popups runtime  pja v1.0.8
+/* Dashboard Holiday Popups runtime  pja v1.0.9
    Loaded on every Home Assistant page by the integration. Decides per page whether to draw
    anything, then animates floaters, popups and decorations over the dashboard. */
 (() => {
   'use strict';
-  const VERSION = '1.0.8'; // pja v1.0.8
+  const VERSION = '1.0.9'; // pja v1.0.9
   if (window.__dhpRuntime) return;
   window.__dhpRuntime = VERSION;
 

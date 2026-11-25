@@ -1,8 +1,8 @@
-/* Dashboard Holiday Popups settings panel  pja v1.0.8
+/* Dashboard Holiday Popups settings panel  pja v1.0.9
    Plain web component (no external library). Same dark look as the Advanced Group Sensor panel. */
 (() => {
   'use strict';
-  const VERSION = '1.0.8'; // pja v1.0.8
+  const VERSION = '1.0.9'; // pja v1.0.9
   const DOMAIN = 'dashboard_holiday_popups';
   const ELEMENT = 'dashboard-holiday-popups-panel';
   if (customElements.get(ELEMENT)) return;

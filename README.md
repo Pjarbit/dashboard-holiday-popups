@@ -268,6 +268,21 @@ actions:
       message: A package is at the door
 ```
 
+### Run now from a dashboard button
+
+Every item also has a **running** switch, named `Dashboard Holiday Popups <item name> running`. Turning it on is **Run now** and turning it off is **Stop**, the same as the panel and the `run_item` and `stop_item` services. It does not change the item's dates or its pause switch, and a running item shows even if its pause switch is off. Every starter item's running switch is ready to use from the start.
+
+A button card with that switch as its entity turns on and off with one tap, and its color shows whether the item is running:
+
+```yaml
+type: button
+entity: switch.dashboard_holiday_popups_flying_witch_running
+name: Flying witch
+show_state: true
+tap_action:
+  action: toggle
+```
+
 ### Pushing things aside
 
 Characters and popups each have a **When pushed away** setting:

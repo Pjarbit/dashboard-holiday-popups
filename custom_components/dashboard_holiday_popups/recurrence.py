@@ -8,7 +8,7 @@ The browser does the date maths (see the "recurrence" block in the runtime
 script). Python only checks and completes the rule so bad data never reaches it.
 Weekdays use the JavaScript numbering: 0 = Sunday ... 6 = Saturday.
 """
-# Integration version: 1.0.8
+# Integration version: 1.0.9
 from __future__ import annotations
 
 from datetime import date, timedelta

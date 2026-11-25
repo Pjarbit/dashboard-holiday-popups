@@ -1,5 +1,5 @@
 """Master switch, one switch per item and one per scene."""
-# Integration version: 1.0.8
+# Integration version: 1.0.9
 from __future__ import annotations
 
 from typing import Any
@@ -89,6 +89,39 @@ class ItemSwitch(_BaseSwitch):
         await self._store.async_set_item_enabled(self._item_id, False)
 
 
+class ItemRunningSwitch(_BaseSwitch):
+    """Run now and Stop for one item. On shows the item until you turn it off; its dates and its pause switch are left alone."""
+
+    def __init__(self, store: PopupStore, entry: ConfigEntry, item_id: str) -> None:
+        super().__init__(store)
+        self._item_id = item_id
+        self._attr_unique_id = f"{entry.entry_id}_item_running_{item_id}"
+        self._attr_icon = "mdi:play-circle-outline"
+
+    def _item(self) -> dict[str, Any] | None:
+        return self._store.find_item(self._item_id)
+
+    @property
+    def available(self) -> bool:
+        return self._item() is not None
+
+    @property
+    def name(self) -> str:
+        item = self._item()
+        return f"Dashboard Holiday Popups {item['name']} running" if item else "Dashboard Holiday Popups item running"
+
+    @property
+    def is_on(self) -> bool:
+        item = self._item()
+        return bool(item and item["running"])
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._store.async_set_running(self._item_id, True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._store.async_set_running(self._item_id, False)
+
+
 class SceneSwitch(_BaseSwitch):
     """Pause or resume one scene."""
 
@@ -127,6 +160,7 @@ async def async_setup_entry(
 ) -> None:
     store: PopupStore = hass.data[DOMAIN]["store"]
     known: dict[str, ItemSwitch] = {}
+    known_running: dict[str, ItemRunningSwitch] = {}
     known_scenes: dict[str, SceneSwitch] = {}
     async_add_entities([MasterSwitch(store, entry)])
 
@@ -143,14 +177,19 @@ async def async_setup_entry(
         new = [ItemSwitch(store, entry, i) for i in current_ids if i not in known]
         for switch in new:
             known[switch._item_id] = switch
+        new_running = [ItemRunningSwitch(store, entry, i) for i in current_ids if i not in known_running]
+        for running_switch in new_running:
+            known_running[running_switch._item_id] = running_switch
         scene_ids = {scene["id"] for scene in store.scenes}
         new_scenes = [SceneSwitch(store, entry, i) for i in scene_ids if i not in known_scenes]
         for scene_switch in new_scenes:
             known_scenes[scene_switch._scene_id] = scene_switch
-        if new or new_scenes:
-            async_add_entities([*new, *new_scenes])
+        if new or new_running or new_scenes:
+            async_add_entities([*new, *new_running, *new_scenes])
         for item_id in [i for i in known if i not in current_ids]:
             _drop(known.pop(item_id))
+        for item_id in [i for i in known_running if i not in current_ids]:
+            _drop(known_running.pop(item_id))
         for scene_id in [i for i in known_scenes if i not in scene_ids]:
             _drop(known_scenes.pop(scene_id))
 

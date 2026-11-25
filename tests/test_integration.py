@@ -47,7 +47,7 @@ async def test_reload_twice_does_not_duplicate(hass, setup_integration):
     switches = [e for e in registry.entities.values() if e.platform == DOMAIN]
     from custom_components.dashboard_holiday_popups.seed import seed_items
 
-    assert len(switches) == 1 + len(seed_items())  # master + one per starter item
+    assert len(switches) == 1 + 2 * len(seed_items())  # master + a pause switch and a running switch per starter item
 
 
 async def test_get_config_open_to_any_user_but_writes_are_admin_only(
@@ -146,6 +146,29 @@ async def test_switches_pause_items_and_master(hass, setup_integration):
     assert store.settings["enabled"] is False
     await hass.async_block_till_done()
     assert hass.states.get("switch.dashboard_holiday_popups").state == "off"
+
+
+async def test_running_switch_is_run_now_and_leaves_dates_and_pause_alone(hass, setup_integration):
+    store = get_store(hass)
+    mine = await store.async_save_item({"kind": "popup", "name": "Mine", "enabled": False, "image": {"file": "m-1.gif"}})
+    await hass.async_block_till_done()
+    entity = "switch.dashboard_holiday_popups_mine_running"
+    assert hass.states.get(entity).state == "off"
+    before = (store.find_item(mine["id"])["enabled"], list(store.find_item(mine["id"])["triggers"]))
+    await hass.services.async_call("switch", "turn_on", {"entity_id": entity}, blocking=True)
+    await hass.async_block_till_done()
+    assert store.find_item(mine["id"])["running"] is True and hass.states.get(entity).state == "on"
+    await hass.services.async_call("switch", "turn_off", {"entity_id": entity}, blocking=True)
+    await hass.async_block_till_done()
+    assert store.find_item(mine["id"])["running"] is False and hass.states.get(entity).state == "off"
+    assert (store.find_item(mine["id"])["enabled"], list(store.find_item(mine["id"])["triggers"])) == before
+    # Run now from the panel or the run_item service shows up on the switch too
+    await hass.services.async_call(DOMAIN, "run_item", {"item": "Mine"}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get(entity).state == "on"
+    assert await store.async_delete_item(mine["id"])
+    await hass.async_block_till_done()
+    assert hass.states.get(entity) is None
 
 
 def _form(data: bytes, filename: str):
@@ -299,6 +322,9 @@ async def test_starter_item_switches_start_disabled_but_your_own_are_live(hass, 
     await hass.async_block_till_done()
     assert hass.states.get("switch.dashboard_holiday_popups_mine") is not None
     assert hass.states.get("switch.dashboard_holiday_popups") is not None  # master is always there
+    # the running switch of a starter is live from the start, so a dashboard button works straight away
+    assert registry.async_get("switch.dashboard_holiday_popups_menorah_running").disabled_by is None
+    assert hass.states.get("switch.dashboard_holiday_popups_menorah_running").state == "off"
 
 
 async def test_disable_all_is_admin_only_and_scoped(hass, setup_integration, hass_ws_client, hass_read_only_access_token):
