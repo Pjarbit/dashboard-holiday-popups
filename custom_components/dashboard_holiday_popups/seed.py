@@ -10,6 +10,9 @@ HALLOWEEN = ("Halloween", "10-15", "10-31")
 THANKSGIVING = ("Thanksgiving", "11-22", "11-28")  # 4th Thursday always falls on Nov 22-28
 CHRISTMAS = ("Christmas", "12-01", "12-26")
 
+# Starter files added after 1.0.7. A store saved by 1.0.7 or earlier never had these offered.
+ADDED_AFTER_1_0_7 = {"green-xmas-monster.gif"}
+
 
 def _date(window: tuple[str, str, str] | tuple[str, str]) -> dict[str, Any]:
     """A yearly date trigger from MM-DD (and an optional last MM-DD). 2000 is a leap year."""
