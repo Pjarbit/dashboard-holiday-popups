@@ -1,5 +1,5 @@
 """Config flow for Dashboard Holiday Popups."""
-# Integration version: 1.0.9
+# Integration version: 1.0.10
 from __future__ import annotations
 
 from typing import Any

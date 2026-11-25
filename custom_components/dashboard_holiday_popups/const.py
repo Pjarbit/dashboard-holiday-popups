@@ -1,9 +1,9 @@
 """Constants for Dashboard Holiday Popups."""
-# Integration version: 1.0.9
+# Integration version: 1.0.10
 from __future__ import annotations
 
 DOMAIN = "dashboard_holiday_popups"
-VERSION = "1.0.9"
+VERSION = "1.0.10"
 
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1

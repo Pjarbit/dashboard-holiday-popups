@@ -1,4 +1,4 @@
-# Integration version: 1.0.9
+# Integration version: 1.0.10
 """Starter items created on first run and added default gifs. All art ships in the defaults folder."""
 from __future__ import annotations
 
