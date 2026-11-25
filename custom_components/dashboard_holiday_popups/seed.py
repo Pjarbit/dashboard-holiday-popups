@@ -1,5 +1,5 @@
 # Integration version: 1.0.8
-"""Starter items created on first run. All art ships in the defaults folder."""
+"""Starter items created on first run and added default gifs. All art ships in the defaults folder."""
 from __future__ import annotations
 
 from datetime import date
